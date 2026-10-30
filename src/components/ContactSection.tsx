@@ -97,7 +97,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ profile }) => {
                     LinkedIn Network
                   </div>
                   <a
-                    href={profile?.linkedInUrl || 'https://www.linkedin.com/in/gabriella-christiani'}
+                    href={profile?.linkedInUrl || 'https://www.linkedin.com/in/gabriellachristiani'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-bold text-[#3E2C22] hover:text-[#694B36] transition-colors flex items-center gap-1"
@@ -118,7 +118,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ profile }) => {
                     Current Location & Availability
                   </div>
                   <div className="text-sm font-bold text-[#3E2C22]">
-                    {profile?.location || 'Purwokerto & Jakarta, Indonesia'}
+                    {profile?.location || 'Jakarta, Indonesia'}
                   </div>
                   <div className="text-xs text-[#806047]">
                     Open to On-Site, Hybrid & Remote Roles
