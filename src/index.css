@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "DM Serif Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-handwriting: "Caveat", cursive, sans-serif;
+
+  --color-ivory: #F8F5EF;
+  --color-warm-white: #FFFCF7;
+  --color-cream: #F1E8DC;
+  --color-beige: #DCC9B3;
+  --color-taupe: #A58A73;
+  --color-mocha: #806047;
+  --color-chocolate: #694B36;
+  --color-espresso: #3E2C22;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-sans);
+  background-color: #F8F5EF;
+  color: #3E2C22;
+}
+
+/* Custom scrollbar for warm aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F8F5EF;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DCC9B3;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A58A73;
+}
+
+.font-editorial {
+  font-family: "DM Serif Display", Georgia, serif;
+}
+
+.font-handwriting {
+  font-family: "Caveat", cursive, sans-serif;
+}
+
+/* Waving Hand Animation */
+@keyframes wave-hand {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(16deg); }
+  20% { transform: rotate(-10deg); }
+  30% { transform: rotate(16deg); }
+  40% { transform: rotate(-6deg); }
+  50% { transform: rotate(12deg); }
+  60% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-wave {
+  display: inline-block;
+  transform-origin: 70% 75%;
+  animation: wave-hand 2.2s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.animate-wave:hover {
+  animation: wave-hand 0.8s ease-in-out infinite;
+}

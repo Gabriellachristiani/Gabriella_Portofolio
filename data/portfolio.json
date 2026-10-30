@@ -1,0 +1,316 @@
+{
+  "profile": {
+    "fullName": "Gabriella Christiani",
+    "title": "Junior Business Analyst | Junior Data Analyst",
+    "greeting": "Hello, I'm Gabriella Christiani.",
+    "headline": "Turning Data Into Insights. Transforming Ideas Into Solutions.",
+    "avatarUrl": "",
+    "email": "gabriellachristiani77@gmail.com",
+    "phone": "+62 812-8920-4155",
+    "location": "Purwokerto & Jakarta, Indonesia (Open to Hybrid & Remote)",
+    "linkedInUrl": "https://www.linkedin.com/in/gabriella-christiani",
+    "githubUrl": "https://github.com/gabriellachristiani",
+    "bioSummary": "An Information Systems graduate from Telkom University Purwokerto passionate about business analysis, data analytics, and technology-driven solutions. I combine rigorous business process modeling (BPMN 2.0) with quantitative analytical workflows in Python, SQL, and Looker Studio.",
+    "bioParagraphs": [
+      "I am an Information Systems graduate from Telkom University Purwokerto (GPA: 3.69 / 4.00) with a strong foundation built through hands-on internships at government agencies like BPKP Headquarters and academic research initiatives.",
+      "As a graduate of both SMK Multimedia and Telkom University's Information Systems program, I bring a rare combination of visual communication sensibility, technical systems architecture, and business requirements engineering.",
+      "Whether reviewing organizational workflows for Standard Operating Procedures (SOPs), conducting aspect-based sentiment analysis with IndoBERT on hospital patient reviews, or building data analytics dashboards in Excel and SQL, I love turning complex ambiguity into structured, actionable business solutions."
+    ],
+    "educationTimeline": [
+      {
+        "degree": "Bachelor of Information Systems",
+        "institution": "Telkom University Purwokerto",
+        "period": "2022 – 2026",
+        "gpa": "3.69 / 4.00",
+        "notes": "Focused on business process engineering, database management, enterprise systems, and deep learning NLP for healthcare analytics."
+      },
+      {
+        "degree": "Vocational High School Diploma",
+        "institution": "SMK Multimedia",
+        "period": "Graduated",
+        "notes": "Foundational training in digital media, interface design, graphic composition, and user-centric communication."
+      }
+    ],
+    "areasOfInterest": [
+      "Business Process Analysis & Optimization",
+      "Standard Operating Procedures (SOP) Engineering",
+      "Requirements Elicitation & BRD Documentation",
+      "Exploratory Data Analysis & Business Intelligence",
+      "Natural Language Processing & Sentiment Analysis"
+    ],
+    "professionalStrengths": [
+      "BPMN 2.0 Process Modeling & Gap Analysis",
+      "Stakeholder Coordination & Agile Sprints",
+      "SQL Querying & Multi-Source Data Consolidation",
+      "Data Storytelling with Looker Studio & Excel",
+      "Deep Learning NLP Evaluation (IndoBERT)"
+    ],
+    "coreCompetencies": [
+      {
+        "category": "Business Analysis",
+        "skills": [
+          "Business Process Analysis",
+          "SOP Documentation",
+          "Workflow Review",
+          "System Design Coordination",
+          "Stakeholder Coordination",
+          "User Stories & Acceptance Criteria"
+        ]
+      },
+      {
+        "category": "Data Analytics",
+        "skills": [
+          "Microsoft Excel",
+          "SQL",
+          "Python",
+          "Looker Studio",
+          "Data Visualization",
+          "Data Analysis"
+        ]
+      },
+      {
+        "category": "Design & Productivity",
+        "skills": [
+          "Figma",
+          "Microsoft Office",
+          "Google Workspace",
+          "Lucidchart",
+          "Miro"
+        ]
+      }
+    ],
+    "cvUrl": "/uploads/cv/gabriella_christiani_cv_1793345774002.pdf",
+    "cvFileName": "Gabriella_Christiani_CV.pdf",
+    "cvUpdatedAt": "2026-10-30T07:36:14.007Z"
+  },
+  "projects": [
+    {
+      "id": "proj-bpkp",
+      "title": "Business Process Analysis & Internship Admission System",
+      "category": "business-analysis",
+      "projectType": "Government IT System & Process Engineering",
+      "organization": "BPKP — Information Technology Division",
+      "period": "July – September 2025",
+      "role": "IT System Intern | Business Process & UI/UX Support",
+      "tagline": "Supported business process documentation, SOP preparation, and system design coordination for a new internship admission system at BPKP Headquarters.",
+      "problemStatement": "Legacy internship admission processes across division units involved dispersed email submissions and manual tracking spreadsheets. The objective was to design a unified digital admission flow while maintaining strict data governance without exposing internal confidential data.",
+      "methodology": "Conducted stakeholder interviews with IT division heads, reviewed existing intake touchpoints, prepared comprehensive Standard Operating Procedures (SOPs), drafted workflow diagrams, and collaborated with developers on UI/UX mockups and wireframes.",
+      "deliverables": [
+        "Business Process Workflow Diagrams (BPMN 2.0)",
+        "Standard Operating Procedures (SOP) Official Draft",
+        "Anonymized Wireframes & UI Previews",
+        "System Functional Requirements & Coordination Notes"
+      ],
+      "tools": ["BPMN", "Lucidchart", "Figma", "Microsoft Office", "Google Workspace"],
+      "results": [
+        "Successfully mapped end-to-end internship admission lifecycle",
+        "Prepared comprehensive SOP documentation adopted for division coordination",
+        "Delivered intuitive UI wireframes for BPKP headquarters system deployment"
+      ],
+      "images": [],
+      "published": true,
+      "featured": true,
+      "date": "2025",
+      "createdAt": "2025-07-15"
+    },
+    {
+      "id": "proj-indobert",
+      "title": "Aspect-Based Sentiment Analysis of Google Maps Reviews — Hermina Hospital Purwokerto",
+      "category": "data-analytics",
+      "projectType": "Undergraduate Thesis / Final Project",
+      "organization": "Telkom University Purwokerto",
+      "period": "2025 – 2026",
+      "role": "Lead Researcher / Author",
+      "tagline": "Fine-tuning IndoBERT deep learning model on 3,936 Google Maps reviews and 8,229 aspect-sentiment pairs across 5 hospital service aspects.",
+      "problemStatement": "Unstructured online patient reviews contain rich qualitative feedback, but aggregate 1-to-5 star ratings obscure specific operational weaknesses in healthcare delivery. Hospital administrators need granular intelligence on individual service aspects.",
+      "methodology": "Scraped and verified 3,936 Google Maps reviews, annotated 8,229 aspect-sentiment pairs across 5 dimensions (Service, Empathy, Medical Competence, Facilities, Responsiveness), fine-tuned IndoBERT with transformer tokenization, and performed rigorous statistical validation with confusion matrices and F1-score evaluation.",
+      "deliverables": [
+        "3,936 Patient Reviews & 8,229 Aspect-Sentiment Dataset",
+        "Fine-tuned IndoBERT Deep Learning NLP Model",
+        "Confusion Matrix & Model Performance Architecture",
+        "Undergraduate Thesis Manuscript & Visual Research Deck"
+      ],
+      "tools": ["Python", "IndoBERT", "Transformers", "PyTorch", "Pandas", "Scikit-Learn", "Matplotlib"],
+      "results": [
+        "Model Accuracy: 94.87%",
+        "Model F1-Score: 94.93%",
+        "Granular sentiment distribution mapped across 5 dimensions: Service, Empathy, Medical Competence, Facilities, and Responsiveness"
+      ],
+      "aspectMetrics": [
+        {
+          "aspect": "Medical Competence",
+          "scoreOrAccuracy": "95.2%",
+          "sentimentDistribution": "Dominantly Positive",
+          "note": "Evaluates physician diagnostic clarity and clinical treatment quality"
+        },
+        {
+          "aspect": "Empathy",
+          "scoreOrAccuracy": "94.6%",
+          "sentimentDistribution": "High Positive",
+          "note": "Measures nurse bedside manner, kindness, and compassionate care"
+        },
+        {
+          "aspect": "Service",
+          "scoreOrAccuracy": "94.1%",
+          "sentimentDistribution": "Balanced / Constructive",
+          "note": "Assesses front-desk administrative intake, registration, and billing flow"
+        },
+        {
+          "aspect": "Facilities",
+          "scoreOrAccuracy": "95.5%",
+          "sentimentDistribution": "High Positive",
+          "note": "Reviews hospital room cleanliness, equipment availability, and parking"
+        },
+        {
+          "aspect": "Responsiveness",
+          "scoreOrAccuracy": "94.9%",
+          "sentimentDistribution": "Critical Optimization Area",
+          "note": "Evaluates emergency room triage times and pharmacy queue dwell times"
+        }
+      ],
+      "images": [],
+      "published": true,
+      "featured": true,
+      "date": "2026",
+      "createdAt": "2026-01-10"
+    },
+    {
+      "id": "proj-reddoorz",
+      "title": "RedDoorz Booking Data Analytics",
+      "category": "data-analytics",
+      "projectType": "Kampus Merdeka Case Study",
+      "organization": "BitLabs Academy — Kampus Merdeka 2024",
+      "period": "2024",
+      "role": "Data Analyst Cohort Specialist",
+      "tagline": "Collaborative booking data exploration, SQL multi-table querying, and Looker Studio executive dashboard presentation.",
+      "score": "83.85 / 100",
+      "problemStatement": "Multi-property hospitality networks encounter dynamic occupancy fluctuations, seasonal cancellation surges, and diverse customer channel behaviors that demand data-backed marketing and pricing strategies.",
+      "methodology": "Imported and sanitized hotel reservation records in Excel and SQL, conducted exploratory data analysis (EDA), formulated SQL analytical queries, built interactive Looker Studio visualizations, and synthesized business insight recommendations.",
+      "deliverables": [
+        "Sanitized Hospitality Booking Dataset & Data Dictionary",
+        "SQL Query Scripts (Aggregation, Joins, Window Functions)",
+        "Interactive Looker Studio KPI Dashboard",
+        "Executive Strategy Presentation Deck"
+      ],
+      "tools": ["Excel", "SQL", "Looker Studio", "Google Workspace"],
+      "results": [
+        "Final Assessment Score: 83.85 / 100",
+        "Created real-time dynamic dashboard for ADR, RevPAR, and lead times",
+        "Isolated peak cancellation risk windows to inform deposit policies"
+      ],
+      "images": [],
+      "published": true,
+      "featured": true,
+      "date": "2024",
+      "createdAt": "2024-09-20"
+    },
+    {
+      "id": "proj-plastani",
+      "title": "Plastani — Rice Husk-Based Mulch Plastic Platform",
+      "category": "business-analysis",
+      "projectType": "Academic Capstone Project",
+      "organization": "Telkom University Purwokerto",
+      "period": "2024",
+      "role": "Business Process & UI/UX Analyst",
+      "tagline": "An educational web platform and marketplace concept connecting prospective agricultural buyers with eco-friendly rice-husk mulch producers.",
+      "problemStatement": "Agricultural non-biodegradable mulch plastics generate severe microplastic soil degradation. However, smallholder farmers lacked an educational channel and accessible marketplace to procure sustainable rice-husk alternatives.",
+      "methodology": "Conducted market need assessments, modeled customer and seller user journeys in Miro, drafted comprehensive user stories with acceptance criteria, and designed responsive wireframes and UI prototypes in Figma.",
+      "deliverables": [
+        "Educational & Commercial User Journey Maps",
+        "Functional Requirements & Marketplace User Stories",
+        "Responsive Wireframes & Figma UI Prototype",
+        "Sustainability Feasibility Analysis"
+      ],
+      "tools": ["Figma", "Lucidchart", "Miro", "Google Workspace"],
+      "results": [
+        "Completed end-to-end interactive marketplace concept prototype",
+        "Structured transparent supply chain workflow for local mulch producers",
+        "Recognized as an exemplary capstone project in sustainable enterprise design"
+      ],
+      "images": [],
+      "published": true,
+      "featured": false,
+      "date": "2024",
+      "createdAt": "2024-11-15"
+    }
+  ],
+  "experiences": [
+    {
+      "id": "exp-bpkp",
+      "role": "IT System Intern",
+      "company": "Information Technology Division — BPKP",
+      "division": "Badan Pengawasan Keuangan dan Pembangunan (BPKP Headquarters)",
+      "location": "Jakarta, Indonesia",
+      "period": "July 2025 – September 2025",
+      "current": false,
+      "description": "Engaged with the central IT division at BPKP Headquarters to support enterprise business process documentation, standard operating procedure formulation, and technical coordination for next-generation administrative platforms.",
+      "bulletPoints": [
+        "Reviewed existing organizational business processes and supported formal process documentation.",
+        "Assisted in preparing Standard Operating Procedures (SOPs) for internal information systems.",
+        "Coordinated system design activities with IT division engineers and administrative leads.",
+        "Contributed to the development and workflow architecture of a new internship admission system for BPKP Headquarters."
+      ],
+      "technologies": ["BPMN 2.0", "SOP Documentation", "System Design", "Lucidchart", "Figma", "Microsoft Office"]
+    },
+    {
+      "id": "exp-telkom",
+      "role": "Student Staff",
+      "company": "Telkom University",
+      "division": "Academic & Research Information Systems",
+      "location": "Purwokerto, Indonesia",
+      "period": "February 2025 – June 2025",
+      "current": false,
+      "description": "Led data consolidation and business intelligence dashboard initiatives tracking faculty research outputs, scholarly publications, and intellectual property records across academic departments.",
+      "bulletPoints": [
+        "Developed a lecturer research data dashboard consolidating more than 120 scholarly records.",
+        "Validated research data completeness and accuracy against institutional publication standards.",
+        "Reviewed research data trends and identified potential international publication opportunities."
+      ],
+      "technologies": ["Data Analytics", "Excel", "Data Validation", "Dashboard Design", "Looker Studio"]
+    },
+    {
+      "id": "exp-melody",
+      "role": "Administration Intern",
+      "company": "PT Melody Corliss Logistic",
+      "division": "Logistics Administration & Digital Operations",
+      "location": "Indonesia",
+      "period": "November 2022 – March 2023",
+      "current": false,
+      "description": "Maintained operational financial precision and spearheaded the design and implementation of the company's official corporate digital presence.",
+      "bulletPoints": [
+        "Reconciled approximately 3–5 invoices and tax records per day with zero audit discrepancies.",
+        "Developed a company website to support its information architecture and corporate business profile.",
+        "Streamlined administrative filing procedures to improve departmental record retrieval speed."
+      ],
+      "technologies": ["Invoice Reconciliation", "Tax Records", "Web Development", "Accounting Support", "Documentation"]
+    }
+  ],
+  "certifications": [
+    {
+      "id": "cert-bnsp",
+      "title": "BNSP Associate Data Scientist",
+      "issuer": "Badan Nasional Sertifikasi Profesi (BNSP)",
+      "period": "2026–2029",
+      "issueDate": "2026",
+      "credentialUrl": "https://bnsp.go.id",
+      "skills": ["Data Science", "Python", "Data Modeling", "Statistical Testing", "Machine Learning"]
+    },
+    {
+      "id": "cert-bitlabs",
+      "title": "Data Analytics — BitLabs Academy",
+      "issuer": "BitLabs Academy — Kampus Merdeka",
+      "period": "2024",
+      "issueDate": "2024",
+      "credentialUrl": "https://bitlabs.id",
+      "skills": ["Microsoft Excel", "SQL", "Looker Studio", "Data Visualization", "Data Storytelling"]
+    },
+    {
+      "id": "cert-toefl",
+      "title": "TOEFL EPrT (English Proficiency Test)",
+      "issuer": "Telkom University Language Center",
+      "period": "2026–2028",
+      "issueDate": "2026",
+      "skills": ["Professional English", "Technical Reading", "Written Reporting", "Listening Comprehension"]
+    }
+  ]
+}
