@@ -89,6 +89,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!r.ok) throw new Error(await r.text());
       return send(res, 200, { success: true, ...(await r.json())?.[0] });
     }
+    const loadContent = async () => {
+      const response = await supabase('rest/v1/portfolio_data?id=eq.1&select=content', {}, true);
+      if (!response.ok) throw new Error(await response.text());
+      const rows = await response.json();
+      return rows?.[0]?.content || {};
+    };
+    const saveContent = async (content: any) => {
+      const response = await supabase('rest/v1/portfolio_data?on_conflict=id', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ id: 1, content, updated_at: new Date().toISOString() }),
+      }, true);
+      if (!response.ok) throw new Error(await response.text());
+    };
+    if (path === '/admin/profile' && req.method === 'PUT') {
+      const content = await loadContent();
+      content.profile = { ...content.profile, ...(req.body || {}) };
+      await saveContent(content);
+      return send(res, 200, { success: true, profile: content.profile });
+    }
+    const collectionMatch = path.match(/^\\/admin\\/(projects|certifications)(?:\\/([^/]+))?$/);
+    if (collectionMatch) {
+      const [, collection, id] = collectionMatch;
+      const content = await loadContent();
+      const items = Array.isArray(content[collection]) ? content[collection] : [];
+      if (req.method === 'POST' && !id) {
+        const item = { ...req.body, id: req.body?.id || `${collection}-${Date.now()}`, createdAt: new Date().toISOString() };
+        items.push(item);
+        content[collection] = items;
+        await saveContent(content);
+        return send(res, 200, item);
+      }
+      if ((req.method === 'PUT' || req.method === 'DELETE') && id) {
+        const index = items.findIndex((item: any) => String(item.id) === id);
+        if (index < 0) return send(res, 404, { error: 'Item not found' });
+        if (req.method === 'DELETE') items.splice(index, 1);
+        else items[index] = { ...items[index], ...(req.body || {}), id: items[index].id };
+        content[collection] = items;
+        await saveContent(content);
+        return send(res, 200, { success: true });
+      }
+    }
     if (path === '/admin/media' && req.method === 'GET') return send(res, 200, { media: [] });
     if (path === '/admin/trusted-devices' && req.method === 'GET') return send(res, 200, { totalTrustedDevices: 0, isCurrentDeviceTrusted: false, currentExpiresAt: null, devices: [] });
     if (path === '/admin/mfa/status' && req.method === 'GET') return send(res, 200, { mfaEnabled: false, enrolledAt: null, totalRecoveryCodes: 0, remainingRecoveryCodes: 0 });
