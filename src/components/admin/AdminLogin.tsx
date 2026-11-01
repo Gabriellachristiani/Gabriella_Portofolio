@@ -35,8 +35,8 @@ interface MfaSetupData {
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackToPublic }) => {
   const [step, setStep] = useState<AuthStep>('credentials');
-  const [email, setEmail] = useState('gabriellachristiani77@gmail.com');
-  const [password, setPassword] = useState('Gabriella07');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
