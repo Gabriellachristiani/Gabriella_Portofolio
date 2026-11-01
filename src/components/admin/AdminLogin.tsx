@@ -33,6 +33,20 @@ interface MfaSetupData {
   period: number;
 }
 
+async function readApiResponse<T = any>(response: Response): Promise<T> {
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) as T : {} as T;
+  } catch {
+    const preview = text.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 160);
+    throw new Error(
+      response.status === 404
+        ? 'API belum tersedia di deployment Vercel (404). Backend admin perlu dipasang.'
+        : `Server mengirim respons yang bukan JSON (HTTP ${response.status}). ${preview}`
+    );
+  }
+}
+
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackToPublic }) => {
   const [step, setStep] = useState<AuthStep>('credentials');
   const [email, setEmail] = useState('');
@@ -72,7 +86,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
         body: JSON.stringify({ email: email.trim(), password }),
       });
 
-      const data = await res.json();
+      const data = await readApiResponse(res);
 
       if (!res.ok) {
         throw new Error(data.error || 'Authentication failed');
@@ -119,7 +133,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
         body: JSON.stringify({ mfaToken: tokenToUse }),
       });
 
-      const data = await res.json();
+      const data = await readApiResponse(res);
       if (!res.ok) {
         throw new Error(data.error || 'Failed to initialize MFA setup');
       }
@@ -158,7 +172,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
         }),
       });
 
-      const data = await res.json();
+      const data = await readApiResponse(res);
       if (!res.ok) {
         throw new Error(data.error || 'Failed to verify TOTP code');
       }
@@ -208,7 +222,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data = await readApiResponse(res);
       if (!res.ok) {
         throw new Error(data.error || 'Verification failed');
       }
