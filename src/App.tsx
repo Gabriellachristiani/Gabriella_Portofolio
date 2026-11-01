@@ -15,6 +15,15 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminBar } from './components/AdminBar';
 import { RefreshCw } from 'lucide-react';
 
+async function readApiResponse<T = any>(response: Response): Promise<T> {
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) as T : {} as T;
+  } catch {
+    throw new Error(`API returned non-JSON response (HTTP ${response.status}).`);
+  }
+}
+
 export default function App() {
   const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(initialPortfolio as PortfolioData);
@@ -59,7 +68,7 @@ export default function App() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await readApiResponse(res);
         setAdminUser(data.user);
       } else {
         setAdminUser(null);
@@ -79,7 +88,7 @@ export default function App() {
     try {
       const res = await fetch('/api/public/portfolio');
       if (res.ok) {
-        const data = await res.json();
+        const data = await readApiResponse(res);
         setPortfolio(data);
       }
     } catch (err) {
