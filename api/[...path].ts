@@ -38,7 +38,8 @@ async function authenticatedUser(req: VercelRequest) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const path = '/' + String(req.query.path || '');
+  const rawPath = req.query.path;
+  const path = '/' + (Array.isArray(rawPath) ? rawPath.join('/') : String(rawPath || ''));
   try {
     if (req.method === 'GET' && path === '/public/portfolio') {
       const r = await supabase('rest/v1/portfolio_data?id=eq.1&select=content', {}, true);
