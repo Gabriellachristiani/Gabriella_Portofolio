@@ -1,3 +1,4 @@
+import initialPortfolio from '../data/portfolio.json';
 import { useState, useEffect } from 'react';
 import { PortfolioData } from './types/portfolio';
 import { Navbar } from './components/Navbar';
@@ -16,7 +17,7 @@ import { RefreshCw } from 'lucide-react';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
-  const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+  const [portfolio, setPortfolio] = useState<PortfolioData | null>(initialPortfolio as PortfolioData);
   const [loading, setLoading] = useState(true);
   const [adminUser, setAdminUser] = useState<{ email: string; role: string } | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -73,6 +74,8 @@ export default function App() {
 
   // Fetch Public Portfolio
   const fetchPublicPortfolio = async () => {
+    // Static bundled data keeps the public portfolio available even while the legacy API is offline.
+    setPortfolio(initialPortfolio as PortfolioData);
     try {
       const res = await fetch('/api/public/portfolio');
       if (res.ok) {
