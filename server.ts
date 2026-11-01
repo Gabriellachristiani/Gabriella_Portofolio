@@ -8,7 +8,7 @@ import multer from 'multer';
 import QRCode from 'qrcode';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { PortfolioData, Project } from './src/types/portfolio';
+import { PortfolioData, Project, Certification } from './src/types/portfolio';
 import {
   generateTotpSecret,
   generateTotpUri,
@@ -68,6 +68,14 @@ function getMfaMasterKey(): Buffer {
 }
 
 // Load / Save Auth Configuration
+interface TrustedDevice {
+  id: string;
+  tokenHash: string;
+  userAgent?: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
 interface AuthConfig {
   adminEmail: string;
   adminPassword: string;
@@ -78,6 +86,7 @@ interface AuthConfig {
   mfaRecoveryCodeHashes?: RecoveryCodeItem[];
   mfaEnrolledAt?: string | null;
   lockout?: LockoutState;
+  trustedDevices?: TrustedDevice[];
 }
 
 function loadAuth(): AuthConfig {
@@ -100,19 +109,50 @@ function loadAuth(): AuthConfig {
     };
   }
 
-  // Ensure default MFA fields
+  // Ensure default MFA & security fields
   auth.mfaEnabled = Boolean(auth.mfaEnabled);
   auth.mfaSecretEncrypted = auth.mfaSecretEncrypted || null;
   auth.pendingMfaSecretEncrypted = auth.pendingMfaSecretEncrypted || null;
   auth.mfaRecoveryCodeHashes = auth.mfaRecoveryCodeHashes || [];
   auth.mfaEnrolledAt = auth.mfaEnrolledAt || null;
   auth.lockout = auth.lockout || { failedAttempts: 0, lockedUntil: null };
+  auth.trustedDevices = Array.isArray(auth.trustedDevices) ? auth.trustedDevices : [];
 
   return auth;
 }
 
 function saveAuth(auth: AuthConfig) {
   fs.writeFileSync(AUTH_FILE, JSON.stringify(auth, null, 2));
+}
+
+function registerTrustedDevice(authConfig: AuthConfig, req: Request, res: Response): string {
+  const deviceToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(deviceToken).digest('hex');
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days default
+  const now = new Date();
+
+  // Clean expired devices
+  authConfig.trustedDevices = (authConfig.trustedDevices || []).filter(
+    (d) => new Date(d.expiresAt) > now
+  );
+
+  authConfig.trustedDevices.push({
+    id: `dev-${Date.now()}`,
+    tokenHash,
+    userAgent: (req.headers['user-agent'] || 'Browser Client').slice(0, 150),
+    createdAt: now.toISOString(),
+    expiresAt,
+  });
+  saveAuth(authConfig);
+
+  res.cookie('admin_device_trust', deviceToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+
+  return expiresAt;
 }
 
 // Load / Save Portfolio Data
@@ -291,14 +331,57 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
   }
   saveAuth(authConfig);
 
+  // Check if current device is a registered trusted device
+  const deviceTrustToken = req.cookies.admin_device_trust;
+  let isDeviceTrusted = false;
+  if (deviceTrustToken && authConfig.trustedDevices && authConfig.trustedDevices.length > 0) {
+    const hashed = crypto.createHash('sha256').update(deviceTrustToken).digest('hex');
+    const now = new Date();
+    const match = authConfig.trustedDevices.find(
+      (d) => d.tokenHash === hashed && new Date(d.expiresAt) > now
+    );
+    if (match) {
+      isDeviceTrusted = true;
+    }
+  }
+
+  // If MFA is enabled AND this device is trusted, skip the TOTP prompt!
+  if (isDeviceTrusted && authConfig.mfaEnabled) {
+    const token = jwt.sign(
+      { email: authConfig.adminEmail, role: 'admin' },
+      authConfig.jwtSecret,
+      { expiresIn: '30d' }
+    );
+
+    res.cookie('admin_token', token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        email: authConfig.adminEmail,
+        role: 'admin',
+        fullName: 'Gabriella Christiani',
+      },
+      deviceTrusted: true,
+      message: 'Welcome back! Recognized trusted device. Microsoft Authenticator prompt skipped.',
+    });
+    return;
+  }
+
   // Password successfully verified!
-  // CRITICAL SECURITY: Never issue a fully privileged admin session here.
+  // CRITICAL SECURITY: When device is untrusted, issue only short-lived challenge
   if (authConfig.mfaEnabled && authConfig.mfaSecretEncrypted) {
     // Issue restricted short-lived challenge token for Step 2: TOTP Verification
     const mfaToken = jwt.sign(
       { email: authConfig.adminEmail, purpose: 'mfa_pending' },
       authConfig.jwtSecret,
-      { expiresIn: '5m' }
+      { expiresIn: '10m' }
     );
 
     res.json({
@@ -312,7 +395,7 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
     const mfaToken = jwt.sign(
       { email: authConfig.adminEmail, purpose: 'mfa_enrollment' },
       authConfig.jwtSecret,
-      { expiresIn: '10m' }
+      { expiresIn: '15m' }
     );
 
     res.json({
@@ -391,7 +474,7 @@ app.post('/api/auth/mfa/setup', async (req: Request, res: Response) => {
 
 // Admin MFA Activation - Step 2b: Verify 6-digit code, Activate MFA, Return Recovery Codes
 app.post('/api/auth/mfa/activate', (req: Request, res: Response) => {
-  const { mfaToken, code } = req.body;
+  const { mfaToken, code, rememberDevice } = req.body;
   const authConfig = loadAuth();
 
   if (!mfaToken || !code) {
@@ -461,18 +544,24 @@ app.post('/api/auth/mfa/activate', (req: Request, res: Response) => {
   authConfig.lockout = resetLockoutState();
   saveAuth(authConfig);
 
-  // Issue privileged Admin session JWT
+  // If user requested to remember this device, register 30-day trust cookie
+  let deviceTrustedUntil: string | null = null;
+  if (rememberDevice) {
+    deviceTrustedUntil = registerTrustedDevice(authConfig, req, res);
+  }
+
+  // Issue privileged Admin session JWT (30-day persistent session)
   const token = jwt.sign(
     { email: authConfig.adminEmail, role: 'admin' },
     authConfig.jwtSecret,
-    { expiresIn: '7d' }
+    { expiresIn: '30d' }
   );
 
   res.cookie('admin_token', token, {
     httpOnly: true,
     secure: false,
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.json({
@@ -484,13 +573,15 @@ app.post('/api/auth/mfa/activate', (req: Request, res: Response) => {
       fullName: 'Gabriella Christiani',
     },
     recoveryCodes, // Displayed ONLY ONCE to Gabriella Christiani
+    rememberedDevice: Boolean(rememberDevice),
+    deviceTrustedUntil,
     message: 'Microsoft Authenticator TOTP MFA has been successfully enabled for your account.',
   });
 });
 
 // Admin MFA Verify - Step 2c: Standard 6-digit TOTP or Recovery Code verification
 app.post('/api/auth/mfa/verify', (req: Request, res: Response) => {
-  const { mfaToken, code, recoveryCode } = req.body;
+  const { mfaToken, code, recoveryCode, rememberDevice } = req.body;
   const authConfig = loadAuth();
 
   // Evaluate lockout
@@ -557,18 +648,24 @@ app.post('/api/auth/mfa/verify', (req: Request, res: Response) => {
 
     const remainingCount = (authConfig.mfaRecoveryCodeHashes || []).filter((h) => !h.used).length;
 
-    // Issue privileged Admin session JWT
+    // Register trusted device if requested
+    let deviceTrustedUntil: string | null = null;
+    if (rememberDevice) {
+      deviceTrustedUntil = registerTrustedDevice(authConfig, req, res);
+    }
+
+    // Issue privileged Admin session JWT (30 days)
     const token = jwt.sign(
       { email: authConfig.adminEmail, role: 'admin' },
       authConfig.jwtSecret,
-      { expiresIn: '7d' }
+      { expiresIn: '30d' }
     );
 
     res.cookie('admin_token', token, {
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     res.json({
@@ -581,6 +678,8 @@ app.post('/api/auth/mfa/verify', (req: Request, res: Response) => {
       },
       usedRecoveryCode: true,
       remainingRecoveryCodes: remainingCount,
+      rememberedDevice: Boolean(rememberDevice),
+      deviceTrustedUntil,
     });
     return;
   }
@@ -618,17 +717,23 @@ app.post('/api/auth/mfa/verify', (req: Request, res: Response) => {
   authConfig.lockout = resetLockoutState();
   saveAuth(authConfig);
 
+  // Register trusted device if requested
+  let deviceTrustedUntil: string | null = null;
+  if (rememberDevice) {
+    deviceTrustedUntil = registerTrustedDevice(authConfig, req, res);
+  }
+
   const token = jwt.sign(
     { email: authConfig.adminEmail, role: 'admin' },
     authConfig.jwtSecret,
-    { expiresIn: '7d' }
+    { expiresIn: '30d' }
   );
 
   res.cookie('admin_token', token, {
     httpOnly: true,
     secure: false,
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.json({
@@ -639,6 +744,51 @@ app.post('/api/auth/mfa/verify', (req: Request, res: Response) => {
       role: 'admin',
       fullName: 'Gabriella Christiani',
     },
+    rememberedDevice: Boolean(rememberDevice),
+    deviceTrustedUntil,
+  });
+});
+
+// Admin Trusted Devices Status (Protected)
+app.get('/api/admin/trusted-devices', requireAdminAuth, (req: AuthenticatedRequest, res: Response) => {
+  const authConfig = loadAuth();
+  const deviceTrustToken = req.cookies.admin_device_trust;
+  let isCurrentDeviceTrusted = false;
+  let currentExpiresAt: string | null = null;
+  const now = new Date();
+  const validDevices = (authConfig.trustedDevices || []).filter((d) => new Date(d.expiresAt) > now);
+
+  if (deviceTrustToken) {
+    const hashed = crypto.createHash('sha256').update(deviceTrustToken).digest('hex');
+    const match = validDevices.find((d) => d.tokenHash === hashed);
+    if (match) {
+      isCurrentDeviceTrusted = true;
+      currentExpiresAt = match.expiresAt;
+    }
+  }
+
+  res.json({
+    totalTrustedDevices: validDevices.length,
+    isCurrentDeviceTrusted,
+    currentExpiresAt,
+    devices: validDevices.map((d) => ({
+      id: d.id,
+      userAgent: d.userAgent,
+      createdAt: d.createdAt,
+      expiresAt: d.expiresAt,
+    })),
+  });
+});
+
+// Revoke All Trusted Devices (Protected)
+app.post('/api/admin/trusted-devices/revoke', requireAdminAuth, (_req: AuthenticatedRequest, res: Response) => {
+  const authConfig = loadAuth();
+  authConfig.trustedDevices = [];
+  saveAuth(authConfig);
+  res.clearCookie('admin_device_trust');
+  res.json({
+    success: true,
+    message: 'All trusted devices have been revoked. Microsoft Authenticator OTP will be required on next login.',
   });
 });
 
@@ -856,11 +1006,15 @@ app.get('/api/admin/portfolio', requireAdminAuth, (_req: AuthenticatedRequest, r
 app.post('/api/admin/projects', requireAdminAuth, (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = loadPortfolio();
+    const images = Array.isArray(req.body.images) ? req.body.images : [];
+    const coverImage = req.body.coverImage || (images.length > 0 ? images[0] : '');
+
     const newProject = {
       ...req.body,
-      id: `proj-${Date.now()}`,
+      id: req.body.id || `proj-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      images: Array.isArray(req.body.images) ? req.body.images : [],
+      coverImage,
+      images,
       deliverables: Array.isArray(req.body.deliverables) ? req.body.deliverables : [],
       tools: Array.isArray(req.body.tools) ? req.body.tools : [],
       results: Array.isArray(req.body.results) ? req.body.results : [],
@@ -887,10 +1041,18 @@ app.put('/api/admin/projects/:id', requireAdminAuth, (req: AuthenticatedRequest,
       return;
     }
 
+    const images = Array.isArray(req.body.images) ? req.body.images : data.projects[index].images || [];
+    const coverImage =
+      req.body.coverImage !== undefined
+        ? req.body.coverImage
+        : (data.projects[index].coverImage || (images.length > 0 ? images[0] : ''));
+
     data.projects[index] = {
       ...data.projects[index],
       ...req.body,
       id, // keep original id
+      images,
+      coverImage,
     };
 
     savePortfolio(data);
@@ -927,6 +1089,10 @@ app.put('/api/admin/profile', requireAdminAuth, (req: AuthenticatedRequest, res:
     data.profile = {
       ...data.profile,
       ...req.body,
+      // Independently preserve Hero and About Me photos unless explicitly modified
+      heroPhotoUrl: req.body.heroPhotoUrl !== undefined ? req.body.heroPhotoUrl : data.profile.heroPhotoUrl,
+      aboutPhotoUrl: req.body.aboutPhotoUrl !== undefined ? req.body.aboutPhotoUrl : data.profile.aboutPhotoUrl,
+      avatarUrl: req.body.avatarUrl !== undefined ? req.body.avatarUrl : data.profile.avatarUrl,
       // preserve CV metadata unless explicitly modified
       cvUrl: req.body.cvUrl !== undefined ? req.body.cvUrl : data.profile.cvUrl,
       cvFileName: req.body.cvFileName !== undefined ? req.body.cvFileName : data.profile.cvFileName,
@@ -998,10 +1164,19 @@ app.delete('/api/admin/experience/:id', requireAdminAuth, (req: AuthenticatedReq
 app.post('/api/admin/certifications', requireAdminAuth, (req: AuthenticatedRequest, res: Response) => {
   try {
     const data = loadPortfolio();
-    const newCert = {
-      ...req.body,
-      id: `cert-${Date.now()}`,
+    const imageUrl = req.body.imageUrl || req.body.image || '';
+    const newCert: Certification = {
+      id: req.body.id || `cert-${Date.now()}`,
+      title: req.body.title || 'Accredited Certification',
+      issuer: req.body.issuer || '',
+      issueDate: req.body.issueDate || new Date().getFullYear().toString(),
+      period: req.body.period || '',
+      credentialUrl: req.body.credentialUrl || '',
+      credentialFileUrl: req.body.credentialFileUrl || '',
       skills: Array.isArray(req.body.skills) ? req.body.skills : [],
+      imageUrl,
+      image: imageUrl,
+      description: req.body.description || '',
     };
     data.certifications.push(newCert);
     savePortfolio(data);
@@ -1023,10 +1198,21 @@ app.put('/api/admin/certifications/:id', requireAdminAuth, (req: AuthenticatedRe
       return;
     }
 
+    const current = data.certifications[index];
+    const imageUrl =
+      req.body.imageUrl !== undefined
+        ? req.body.imageUrl
+        : req.body.image !== undefined
+        ? req.body.image
+        : (current.imageUrl || current.image || '');
+
     data.certifications[index] = {
-      ...data.certifications[index],
+      ...current,
       ...req.body,
       id,
+      skills: Array.isArray(req.body.skills) ? req.body.skills : current.skills,
+      imageUrl,
+      image: imageUrl,
     };
     savePortfolio(data);
     res.json({ success: true, certification: data.certifications[index] });
@@ -1045,6 +1231,117 @@ app.delete('/api/admin/certifications/:id', requireAdminAuth, (req: Authenticate
     res.json({ success: true, message: 'Certification deleted' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete certification' });
+  }
+});
+
+// Upload Certificate Image (Independent file upload for certifications)
+app.post(
+  '/api/admin/certifications/upload-image',
+  requireAdminAuth,
+  uploadImage.single('certificateImage'),
+  (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        res.status(400).json({ error: 'No certificate image file provided' });
+        return;
+      }
+
+      const imageUrl = `/uploads/${file.filename}`;
+      res.json({
+        success: true,
+        imageUrl,
+        filename: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        message: 'Certificate image uploaded successfully.',
+      });
+    } catch (error) {
+      console.error('Certificate image upload error:', error);
+      res.status(500).json({ error: 'Failed to upload certificate image' });
+    }
+  }
+);
+
+// Upload Hero Photo (Independent from About Me Photo)
+app.post(
+  '/api/admin/profile/hero-photo',
+  requireAdminAuth,
+  uploadImage.single('heroPhoto'),
+  (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        res.status(400).json({ error: 'No hero photo file provided' });
+        return;
+      }
+
+      const data = loadPortfolio();
+      const heroPhotoUrl = `/uploads/${file.filename}`;
+      data.profile.heroPhotoUrl = heroPhotoUrl;
+      savePortfolio(data);
+
+      res.json({
+        success: true,
+        heroPhotoUrl,
+        message: 'Hero photo uploaded and stored persistently.',
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to upload hero photo' });
+    }
+  }
+);
+
+// Delete Hero Photo (Independent from About Me Photo)
+app.delete('/api/admin/profile/hero-photo', requireAdminAuth, (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = loadPortfolio();
+    data.profile.heroPhotoUrl = '';
+    savePortfolio(data);
+    res.json({ success: true, message: 'Hero photo removed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove hero photo' });
+  }
+});
+
+// Upload About Me Photo (Independent from Hero Photo)
+app.post(
+  '/api/admin/profile/about-photo',
+  requireAdminAuth,
+  uploadImage.single('aboutPhoto'),
+  (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        res.status(400).json({ error: 'No About Me photo file provided' });
+        return;
+      }
+
+      const data = loadPortfolio();
+      const aboutPhotoUrl = `/uploads/${file.filename}`;
+      data.profile.aboutPhotoUrl = aboutPhotoUrl;
+      savePortfolio(data);
+
+      res.json({
+        success: true,
+        aboutPhotoUrl,
+        message: 'About Me photo uploaded and stored persistently.',
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to upload About Me photo' });
+    }
+  }
+);
+
+// Delete About Me Photo (Independent from Hero Photo)
+app.delete('/api/admin/profile/about-photo', requireAdminAuth, (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const data = loadPortfolio();
+    data.profile.aboutPhotoUrl = '';
+    savePortfolio(data);
+    res.json({ success: true, message: 'About Me photo removed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove About Me photo' });
   }
 });
 

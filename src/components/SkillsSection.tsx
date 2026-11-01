@@ -112,68 +112,28 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ certifications, pr
           })}
         </div>
 
-        {/* Part 2: Certifications Grid */}
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#806047] mb-6">
-            <Award className="w-4 h-4 text-[#694B36]" />
-            <span>Official Accredited Certifications</span>
+        {/* Transition Callout to Certifications Gallery */}
+        <div className="p-8 rounded-3xl bg-[#FFFCF7] border border-[#DCC9B3] flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#F1E8DC] border border-[#DCC9B3] flex items-center justify-center text-[#694B36] shrink-0">
+              <Award className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-editorial text-2xl font-bold text-[#3E2C22]">
+                Accredited Professional Certifications
+              </h3>
+              <p className="text-sm text-[#694B36] mt-1">
+                Explore official credentials including BNSP Associate Data Scientist, BitLabs Academy, and TOEFL EPrT with verified certificate image proofs.
+              </p>
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {certifications.map((cert) => (
-              <div
-                key={cert.id}
-                className="flex flex-col justify-between bg-[#FFFCF7] border border-[#DCC9B3] rounded-3xl p-7 hover:border-[#A58A73] hover:shadow-sm transition-all"
-              >
-                <div>
-                  <div className="w-12 h-12 rounded-2xl bg-[#F1E8DC] border border-[#DCC9B3] flex items-center justify-center text-[#694B36] mb-5">
-                    <Award className="w-6 h-6" />
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-[#806047] mb-2 font-semibold">
-                    <span>{cert.issuer}</span>
-                    <span className="bg-[#F1E8DC] px-2 py-0.5 rounded-full text-[11px]">
-                      {cert.period || cert.issueDate}
-                    </span>
-                  </div>
-
-                  <h3 className="font-editorial text-2xl font-bold text-[#3E2C22] leading-snug mb-4">
-                    {cert.title}
-                  </h3>
-
-                  <div className="space-y-1.5 mb-6">
-                    <div className="text-[11px] uppercase tracking-wider font-semibold text-[#806047]">
-                      Verified Skills:
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {cert.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[#F8F5EF] text-[#3E2C22] border border-[#DCC9B3]/60"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {cert.credentialUrl && (
-                  <div className="pt-4 border-t border-[#DCC9B3]/60">
-                    <a
-                      href={cert.credentialUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#694B36] hover:text-[#3E2C22] transition-colors"
-                    >
-                      <span>Verify Credential</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <a
+            href="#certifications"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#3E2C22] text-[#F8F5EF] hover:bg-[#694B36] transition-colors shrink-0"
+          >
+            <span>View Certificate Gallery ({certifications.length})</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
         </div>
       </div>
     </section>

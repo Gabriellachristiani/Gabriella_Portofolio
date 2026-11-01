@@ -55,6 +55,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
   // Recovery Code input mode on verify step
   const [useRecoveryCodeMode, setUseRecoveryCodeMode] = useState(false);
   const [recoveryCodeInput, setRecoveryCodeInput] = useState('');
+  const [rememberDevice, setRememberDevice] = useState(true);
 
   // -------------------------------------------------------------
   // STEP 1: Email & Password Verification
@@ -153,6 +154,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
         body: JSON.stringify({
           mfaToken,
           code: cleanCode,
+          rememberDevice,
         }),
       });
 
@@ -185,7 +187,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
     setLoading(true);
 
     try {
-      const payload: Record<string, string> = { mfaToken };
+      const payload: Record<string, any> = { mfaToken, rememberDevice };
       if (useRecoveryCodeMode) {
         const cleanRec = recoveryCodeInput.trim().toUpperCase();
         if (!cleanRec) {
@@ -383,6 +385,16 @@ ${recoveryCodes.map((c, i) => `${i + 1}. ${c}`).join('\n')}
                   </div>
                 </div>
 
+                <label className="flex items-center gap-2.5 text-xs text-[#3E2C22] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#3E2C22] accent-[#3E2C22] border-[#DCC9B3] focus:ring-[#694B36]"
+                  />
+                  <span className="font-medium text-[#694B36]">Remember this device for 30 days (Skip Authenticator next time)</span>
+                </label>
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -503,6 +515,16 @@ ${recoveryCodes.map((c, i) => `${i + 1}. ${c}`).join('\n')}
                     className="w-full text-center tracking-[0.5em] text-2xl font-mono font-bold py-3 px-4 rounded-xl border border-[#DCC9B3] bg-[#F8F5EF] text-[#3E2C22] focus:outline-none focus:ring-2 focus:ring-[#694B36]/20 focus:border-[#694B36]"
                   />
                 </div>
+
+                <label className="flex items-center gap-2.5 text-xs text-[#3E2C22] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#3E2C22] accent-[#3E2C22] border-[#DCC9B3] focus:ring-[#694B36]"
+                  />
+                  <span className="font-medium text-[#694B36]">Remember this device (Skip Authenticator next time for 30 days)</span>
+                </label>
 
                 <div className="flex items-center gap-3">
                   <button
@@ -694,6 +716,16 @@ ${recoveryCodes.map((c, i) => `${i + 1}. ${c}`).join('\n')}
                     </p>
                   </div>
                 )}
+
+                <label className="flex items-center gap-2.5 text-xs text-[#3E2C22] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#3E2C22] accent-[#3E2C22] border-[#DCC9B3] focus:ring-[#694B36]"
+                  />
+                  <span className="font-medium text-[#694B36]">Remember this device for 30 days (Skip Authenticator next time)</span>
+                </label>
 
                 <button
                   type="submit"

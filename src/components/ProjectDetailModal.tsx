@@ -18,7 +18,21 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
       ? 'Business Analysis & Information Systems'
       : 'Data Analytics & Data Science';
 
-  const hasImages = project.images && project.images.length > 0;
+  // Consolidate coverImage and gallery images
+  const allImages: string[] = [];
+  if (project.coverImage && project.coverImage.trim()) {
+    allImages.push(project.coverImage);
+  }
+  if (Array.isArray(project.images)) {
+    project.images.forEach((img) => {
+      if (img && img.trim() && !allImages.includes(img)) {
+        allImages.push(img);
+      }
+    });
+  }
+
+  const hasImages = allImages.length > 0;
+  const currentImage = hasImages ? allImages[Math.min(activeImageIndex, allImages.length - 1)] : '';
 
   return (
     <>
@@ -81,7 +95,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
               <div className="space-y-3">
                 <div className="relative rounded-2xl overflow-hidden border border-[#DCC9B3] bg-[#F1E8DC] aspect-video flex items-center justify-center group">
                   <img
-                    src={project.images[activeImageIndex]}
+                    src={currentImage}
                     alt={`${project.title} screenshot ${activeImageIndex + 1}`}
                     className="w-full h-full object-contain cursor-zoom-in"
                     onClick={() => setLightboxOpen(true)}
@@ -89,18 +103,19 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
 
                   <button
                     onClick={() => setLightboxOpen(true)}
-                    className="absolute top-3 right-3 p-2 rounded-full bg-[#FFFCF7]/90 text-[#3E2C22] hover:bg-[#FFFCF7] shadow-md transition-all opacity-0 group-hover:opacity-100"
+                    className="absolute top-3 right-3 p-2 rounded-full bg-[#FFFCF7]/90 text-[#3E2C22] hover:bg-[#FFFCF7] shadow-md transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs font-semibold px-3"
                     title="Open Fullscreen Lightbox"
                   >
-                    <Maximize2 className="w-4 h-4" />
+                    <Maximize2 className="w-3.5 h-3.5" />
+                    <span>Expand</span>
                   </button>
 
-                  {project.images.length > 1 && (
+                  {allImages.length > 1 && (
                     <>
                       <button
                         onClick={() =>
                           setActiveImageIndex((prev) =>
-                            prev === 0 ? project.images.length - 1 : prev - 1
+                            prev === 0 ? allImages.length - 1 : prev - 1
                           )
                         }
                         className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-[#FFFCF7]/85 hover:bg-[#FFFCF7] text-[#3E2C22] shadow-sm transition-colors"
@@ -111,7 +126,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                       <button
                         onClick={() =>
                           setActiveImageIndex((prev) =>
-                            prev === project.images.length - 1 ? 0 : prev + 1
+                            prev === allImages.length - 1 ? 0 : prev + 1
                           )
                         }
                         className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-[#FFFCF7]/85 hover:bg-[#FFFCF7] text-[#3E2C22] shadow-sm transition-colors"
@@ -123,9 +138,9 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                   )}
                 </div>
 
-                {project.images.length > 1 && (
+                {allImages.length > 1 && (
                   <div className="flex items-center gap-2 overflow-x-auto py-1">
-                    {project.images.map((img, idx) => (
+                    {allImages.map((img, idx) => (
                       <button
                         key={idx}
                         onClick={() => setActiveImageIndex(idx)}
@@ -285,21 +300,61 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
       {/* Lightbox Modal */}
       {lightboxOpen && hasImages && (
         <div
-          className="fixed inset-0 z-60 bg-black/90 flex items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 z-60 bg-black/95 flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in"
           onClick={() => setLightboxOpen(false)}
         >
-          <button
-            onClick={() => setLightboxOpen(false)}
-            className="absolute top-4 right-4 p-3 rounded-full bg-white/20 text-white hover:bg-white/40"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <img
-            src={project.images[activeImageIndex]}
-            alt="fullscreen view"
-            className="max-w-full max-h-[90vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {/* Top Bar */}
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between text-white/90 z-10">
+            <span className="text-xs uppercase tracking-wider font-semibold">
+              {project.title} · Screenshot {activeImageIndex + 1} of {allImages.length}
+            </span>
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="p-2.5 rounded-full bg-white/20 text-white hover:bg-white/40 transition-colors"
+              title="Close Fullscreen"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main Fullscreen Image */}
+          <div className="relative max-w-5xl max-h-[85vh] flex items-center justify-center">
+            <img
+              src={currentImage}
+              alt="fullscreen view"
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {allImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) =>
+                      prev === 0 ? allImages.length - 1 : prev - 1
+                    );
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-white hover:bg-black/90 transition-colors"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) =>
+                      prev === allImages.length - 1 ? 0 : prev + 1
+                    );
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-white hover:bg-black/90 transition-colors"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </>

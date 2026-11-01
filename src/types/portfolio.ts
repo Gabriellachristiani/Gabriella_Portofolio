@@ -60,7 +60,9 @@ export interface Certification {
   credentialUrl?: string;
   credentialFileUrl?: string;
   skills: string[];
+  imageUrl?: string;
   image?: string;
+  description?: string;
 }
 
 export interface EducationEntry {
@@ -74,6 +76,8 @@ export interface EducationEntry {
 export interface Profile {
   fullName: string;
   title: string;
+  heroPhotoUrl?: string;
+  aboutPhotoUrl?: string;
   avatarUrl?: string;
   greeting?: string;
   headline?: string;

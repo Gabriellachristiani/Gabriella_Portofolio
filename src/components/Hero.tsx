@@ -91,10 +91,10 @@ export const Hero: React.FC<HeroProps> = ({ profile }) => {
             <div className="relative w-full max-w-sm sm:max-w-md aspect-[4/5] rounded-[32px] overflow-hidden border-2 border-[#DCC9B3] bg-[#F1E8DC] shadow-xl p-2.5">
               {/* Inner Frame */}
               <div className="w-full h-full rounded-[24px] overflow-hidden bg-[#E8DDD0] relative flex items-center justify-center">
-                {profile?.avatarUrl ? (
+                {profile?.heroPhotoUrl ? (
                   <img
-                    src={profile.avatarUrl}
-                    alt="Gabriella Christiani"
+                    src={profile.heroPhotoUrl}
+                    alt="Gabriella Christiani - Hero Portrait"
                     className="w-full h-full object-cover object-top"
                   />
                 ) : (

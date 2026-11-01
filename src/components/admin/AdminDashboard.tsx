@@ -32,6 +32,11 @@ import {
   ShieldAlert,
   Copy,
   Check,
+  Star,
+  ArrowLeft,
+  ArrowRight,
+  Clock,
+  Laptop,
 } from 'lucide-react';
 import { PortfolioData, Project, Experience, Certification, Profile, EducationEntry } from '../../types/portfolio';
 
@@ -77,9 +82,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
   const [rawResults, setRawResults] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Profile & Avatar state
+  // Profile, Hero & About Photo states
   const [profileForm, setProfileForm] = useState<Partial<Profile>>({});
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingHeroPhoto, setUploadingHeroPhoto] = useState(false);
+  const [uploadingAboutPhoto, setUploadingAboutPhoto] = useState(false);
+
+  // Certifications CRUD state
+  const [isEditingCert, setIsEditingCert] = useState(false);
+  const [certForm, setCertForm] = useState<Partial<Certification>>({
+    title: '',
+    issuer: '',
+    issueDate: new Date().getFullYear().toString(),
+    period: '',
+    credentialUrl: '',
+    skills: [],
+    imageUrl: '',
+    description: '',
+  });
+  const [rawCertSkills, setRawCertSkills] = useState('');
+  const [uploadingCertImage, setUploadingCertImage] = useState(false);
 
   // About Me form state
   const [bioParagraphsText, setBioParagraphsText] = useState('');
@@ -106,6 +127,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
   const [regeneratingCodes, setRegeneratingCodes] = useState(false);
   const [newRecoveryCodes, setNewRecoveryCodes] = useState<string[]>([]);
   const [copiedNewCodes, setCopiedNewCodes] = useState(false);
+
+  // Trusted Devices state
+  const [trustedDevicesData, setTrustedDevicesData] = useState<{
+    totalTrustedDevices: number;
+    isCurrentDeviceTrusted: boolean;
+    currentExpiresAt: string | null;
+    devices: any[];
+  } | null>(null);
 
   const getAuthHeader = (): Record<string, string> => {
     const token = localStorage.getItem('admin_token');
@@ -205,9 +234,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
     }
   };
 
+  const fetchTrustedDevices = async () => {
+    try {
+      const res = await fetch('/api/admin/trusted-devices', { headers: getAuthHeader() });
+      if (res.ok) {
+        const data = await res.json();
+        setTrustedDevicesData(data);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   useEffect(() => {
     fetchData();
     fetchMfaStatus();
+    fetchTrustedDevices();
   }, []);
 
   useEffect(() => {
@@ -215,32 +257,223 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
       fetchMedia();
     } else if (activeTab === 'security') {
       fetchMfaStatus();
+      fetchTrustedDevices();
     }
   }, [activeTab]);
 
-  // --- AVATAR UPLOAD ---
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // --- HERO PHOTO MANAGEMENT (INDEPENDENT) ---
+  const handleHeroPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingAvatar(true);
+    setUploadingHeroPhoto(true);
     const formData = new FormData();
-    formData.append('avatar', file);
+    formData.append('heroPhoto', file);
 
     try {
-      const res = await fetch('/api/admin/profile/avatar', {
+      const res = await fetch('/api/admin/profile/hero-photo', {
         method: 'POST',
         headers: getAuthHeader(),
         body: formData,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to upload profile picture');
-      showNotice('success', 'Profile picture updated successfully!');
+      if (!res.ok) throw new Error(data.error || 'Failed to upload hero photo');
+      showNotice('success', 'Hero photo uploaded and stored persistently!');
       fetchData();
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Hero photo upload failed');
+    } finally {
+      setUploadingHeroPhoto(false);
+    }
+  };
+
+  const handleDeleteHeroPhoto = async () => {
+    if (!confirm('Are you sure you want to remove your Hero photo? An artistic placeholder will be shown.')) return;
+    try {
+      const res = await fetch('/api/admin/profile/hero-photo', {
+        method: 'DELETE',
+        headers: getAuthHeader(),
+      });
+      if (!res.ok) throw new Error('Failed to remove hero photo');
+      showNotice('success', 'Hero photo removed successfully.');
+      fetchData();
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Failed to remove hero photo');
+    }
+  };
+
+  // --- ABOUT ME PHOTO MANAGEMENT (INDEPENDENT) ---
+  const handleAboutPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAboutPhoto(true);
+    const formData = new FormData();
+    formData.append('aboutPhoto', file);
+
+    try {
+      const res = await fetch('/api/admin/profile/about-photo', {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to upload About Me photo');
+      showNotice('success', 'About Me photo uploaded and stored persistently!');
+      fetchData();
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'About Me photo upload failed');
+    } finally {
+      setUploadingAboutPhoto(false);
+    }
+  };
+
+  const handleDeleteAboutPhoto = async () => {
+    if (!confirm('Are you sure you want to remove your About Me photo? A formal graduation badge placeholder will be shown.')) return;
+    try {
+      const res = await fetch('/api/admin/profile/about-photo', {
+        method: 'DELETE',
+        headers: getAuthHeader(),
+      });
+      if (!res.ok) throw new Error('Failed to remove About Me photo');
+      showNotice('success', 'About Me photo removed successfully.');
+      fetchData();
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Failed to remove About Me photo');
+    }
+  };
+
+  // --- CERTIFICATIONS CRUD & IMAGE MANAGEMENT ---
+  const handleOpenNewCert = () => {
+    setCertForm({
+      title: '',
+      issuer: '',
+      issueDate: new Date().getFullYear().toString(),
+      period: '',
+      credentialUrl: '',
+      skills: [],
+      imageUrl: '',
+      description: '',
+    });
+    setRawCertSkills('');
+    setIsEditingCert(true);
+  };
+
+  const handleEditCert = (cert: Certification) => {
+    setCertForm({
+      ...cert,
+      imageUrl: cert.imageUrl || cert.image || '',
+    });
+    setRawCertSkills((cert.skills || []).join(', '));
+    setIsEditingCert(true);
+  };
+
+  const handleCertImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCertImage(true);
+    const formData = new FormData();
+    formData.append('certificateImage', file);
+
+    try {
+      const res = await fetch('/api/admin/certifications/upload-image', {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to upload certificate image');
+      setCertForm((prev) => ({
+        ...prev,
+        imageUrl: data.imageUrl,
+        image: data.imageUrl,
+      }));
+      showNotice('success', 'Certificate image uploaded! Preview is shown below.');
     } catch (err: unknown) {
       showNotice('error', err instanceof Error ? err.message : 'Upload failed');
     } finally {
-      setUploadingAvatar(false);
+      setUploadingCertImage(false);
+    }
+  };
+
+  const handleRemoveCertImage = () => {
+    setCertForm((prev) => ({
+      ...prev,
+      imageUrl: '',
+      image: '',
+    }));
+  };
+
+  const handleSaveCert = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!certForm.title || !certForm.issuer) {
+      showNotice('error', 'Certification title and issuer are required.');
+      return;
+    }
+
+    const payload = {
+      ...certForm,
+      skills: rawCertSkills
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      imageUrl: certForm.imageUrl || '',
+      image: certForm.imageUrl || '',
+    };
+
+    const isUpdate = Boolean(certForm.id);
+    const url = isUpdate ? `/api/admin/certifications/${certForm.id}` : '/api/admin/certifications';
+    const method = isUpdate ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error('Failed to save certification');
+      showNotice('success', isUpdate ? 'Certification updated successfully!' : 'Certification created successfully!');
+      setIsEditingCert(false);
+      fetchData();
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Save certification failed');
+    }
+  };
+
+  const handleDeleteCert = async (id: string, title: string) => {
+    if (!confirm(`Are you sure you want to remove certification: "${title}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/certifications/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeader(),
+      });
+      if (!res.ok) throw new Error('Failed to delete certification');
+      showNotice('success', 'Certification deleted successfully.');
+      fetchData();
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Failed to delete certification');
+    }
+  };
+
+  const handleRevokeTrustedDevices = async () => {
+    if (!confirm('Are you sure you want to revoke all trusted devices? You will be prompted for Microsoft Authenticator OTP next time you sign in.')) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/trusted-devices/revoke', {
+        method: 'POST',
+        headers: getAuthHeader(),
+      });
+      if (!res.ok) throw new Error('Failed to revoke trusted devices');
+      showNotice('success', 'All trusted devices revoked. Microsoft Authenticator required on next login.');
+      fetchTrustedDevices();
+    } catch (err: unknown) {
+      showNotice('error', err instanceof Error ? err.message : 'Failed to revoke trusted devices');
     }
   };
 
@@ -378,16 +611,57 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
       if (!res.ok) throw new Error(data.error || 'Upload failed');
 
       const newUrls = (data.files || []).map((f: any) => f.url);
-      setProjectForm((prev) => ({
-        ...prev,
-        images: [...(prev.images || []), ...newUrls],
-      }));
+      setProjectForm((prev) => {
+        const updatedImages = [...(prev.images || []), ...newUrls];
+        return {
+          ...prev,
+          images: updatedImages,
+          coverImage: prev.coverImage || updatedImages[0] || '',
+        };
+      });
       showNotice('success', `${newUrls.length} image(s) uploaded successfully`);
     } catch (err: unknown) {
       showNotice('error', err instanceof Error ? err.message : 'Image upload failed');
     } finally {
       setUploadingImage(false);
     }
+  };
+
+  const handleSetCoverImage = (url: string) => {
+    setProjectForm((prev) => ({
+      ...prev,
+      coverImage: url,
+    }));
+    showNotice('success', 'Cover image selected.');
+  };
+
+  const handleRemoveProjectImage = (indexToRemove: number) => {
+    setProjectForm((prev) => {
+      const currentList = prev.images || [];
+      const imageToRemove = currentList[indexToRemove];
+      const updated = currentList.filter((_, idx) => idx !== indexToRemove);
+      const wasCover = prev.coverImage === imageToRemove;
+      return {
+        ...prev,
+        images: updated,
+        coverImage: wasCover ? (updated[0] || '') : prev.coverImage,
+      };
+    });
+  };
+
+  const handleMoveProjectImage = (index: number, direction: 'left' | 'right') => {
+    setProjectForm((prev) => {
+      const list = [...(prev.images || [])];
+      const targetIndex = direction === 'left' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= list.length) return prev;
+      const temp = list[index];
+      list[index] = list[targetIndex];
+      list[targetIndex] = temp;
+      return {
+        ...prev,
+        images: list,
+      };
+    });
   };
 
   // --- CV MANAGEMENT ---
@@ -823,37 +1097,110 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
                       </p>
                     </div>
 
-                    {/* Profile Picture Upload Box */}
-                    <div className="p-6 rounded-3xl bg-[#F8F5EF] border border-[#DCC9B3] flex flex-col sm:flex-row items-center gap-6">
-                      <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#DCC9B3] bg-[#E8DDD0] shrink-0 flex items-center justify-center">
-                        {portfolio?.profile?.avatarUrl ? (
-                          <img
-                            src={portfolio.profile.avatarUrl}
-                            alt="Current profile"
-                            className="w-full h-full object-cover"
+                    {/* Two Independent Photo Upload Cards: Hero Section & About Me */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* 1. Hero Section Photo */}
+                      <div className="p-6 rounded-3xl bg-[#F8F5EF] border border-[#DCC9B3] flex flex-col justify-between space-y-4">
+                        <div className="flex items-start gap-4">
+                          <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#DCC9B3] bg-[#E8DDD0] shrink-0 flex items-center justify-center">
+                            {portfolio?.profile?.heroPhotoUrl ? (
+                              <img
+                                src={portfolio.profile.heroPhotoUrl}
+                                alt="Hero section"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-10 h-10 text-[#806047]" />
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#694B36] text-[#F8F5EF]">
+                              Hero Section
+                            </span>
+                            <h4 className="text-sm font-bold text-[#3E2C22]">
+                              Hero Section Photo
+                            </h4>
+                            <p className="text-xs text-[#806047] leading-relaxed">
+                              Displayed in the top hero showcase alongside your headline. Neutral aesthetic placeholder used if empty.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 pt-2 border-t border-[#DCC9B3]/60">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleHeroPhotoUpload}
+                            disabled={uploadingHeroPhoto}
+                            className="text-xs text-[#694B36] file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#3E2C22] file:text-white hover:file:bg-[#694B36] cursor-pointer"
                           />
-                        ) : (
-                          <User className="w-10 h-10 text-[#806047]" />
-                        )}
+                          {uploadingHeroPhoto && (
+                            <p className="text-xs text-[#694B36] animate-pulse">Uploading hero photo...</p>
+                          )}
+                          {portfolio?.profile?.heroPhotoUrl && (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={handleDeleteHeroPhoto}
+                                className="text-xs font-semibold text-[#8C2E24] hover:underline"
+                              >
+                                Remove Hero Photo
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="space-y-2 text-center sm:text-left flex-1">
-                        <h4 className="text-sm font-bold text-[#3E2C22]">
-                          Upload Your Profile Photo
-                        </h4>
-                        <p className="text-xs text-[#806047]">
-                          Upload a professional portrait (JPG, PNG, WebP). The image is stored persistently and immediately appears on your homepage.
-                        </p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarUpload}
-                          disabled={uploadingAvatar}
-                          className="text-xs text-[#694B36] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#3E2C22] file:text-white hover:file:bg-[#694B36]"
-                        />
-                        {uploadingAvatar && (
-                          <p className="text-xs text-[#694B36]">Uploading portrait...</p>
-                        )}
+                      {/* 2. About Me Section Photo */}
+                      <div className="p-6 rounded-3xl bg-[#F8F5EF] border border-[#DCC9B3] flex flex-col justify-between space-y-4">
+                        <div className="flex items-start gap-4">
+                          <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-[#DCC9B3] bg-[#E8DDD0] shrink-0 flex items-center justify-center">
+                            {portfolio?.profile?.aboutPhotoUrl ? (
+                              <img
+                                src={portfolio.profile.aboutPhotoUrl}
+                                alt="About me section"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <GraduationCap className="w-10 h-10 text-[#806047]" />
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#806047] text-[#F8F5EF]">
+                              About Me Section
+                            </span>
+                            <h4 className="text-sm font-bold text-[#3E2C22]">
+                              About Me Photo
+                            </h4>
+                            <p className="text-xs text-[#806047] leading-relaxed">
+                              Displayed in the About Me section next to your Telkom University education. Completely independent from Hero photo.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 pt-2 border-t border-[#DCC9B3]/60">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAboutPhotoUpload}
+                            disabled={uploadingAboutPhoto}
+                            className="text-xs text-[#694B36] file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#3E2C22] file:text-white hover:file:bg-[#694B36] cursor-pointer"
+                          />
+                          {uploadingAboutPhoto && (
+                            <p className="text-xs text-[#694B36] animate-pulse">Uploading About Me photo...</p>
+                          )}
+                          {portfolio?.profile?.aboutPhotoUrl && (
+                            <div>
+                              <button
+                                type="button"
+                                onClick={handleDeleteAboutPhoto}
+                                className="text-xs font-semibold text-[#8C2E24] hover:underline"
+                              >
+                                Remove About Me Photo
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1034,28 +1381,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
                               key={proj.id}
                               className="p-5 rounded-2xl border border-[#DCC9B3] bg-[#F8F5EF] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                             >
-                              <div className="space-y-1.5 flex-1">
-                                <div className="flex items-center gap-2 text-xs">
-                                  <span className="font-bold text-[#806047] uppercase tracking-wider">
-                                    {proj.category === 'business-analysis' ? 'Business Analysis' : 'Data Analytics'}
-                                  </span>
-                                  <span className="text-[#DCC9B3]">·</span>
-                                  <span className="text-[#806047]">{proj.period || proj.date}</span>
-                                  <span className="text-[#DCC9B3]">·</span>
-                                  <span
-                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                      proj.published
-                                        ? 'bg-emerald-100 text-emerald-800'
-                                        : 'bg-amber-100 text-amber-800'
-                                    }`}
-                                  >
-                                    {proj.published ? 'Published' : 'Draft'}
-                                  </span>
+                              <div className="flex items-start gap-4 flex-1">
+                                {(proj.coverImage || (proj.images && proj.images[0])) ? (
+                                  <div className="w-20 h-14 rounded-lg overflow-hidden border border-[#DCC9B3] bg-[#E8DDD0] shrink-0">
+                                    <img
+                                      src={proj.coverImage || proj.images?.[0]}
+                                      alt={proj.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-20 h-14 rounded-lg border border-[#DCC9B3] bg-[#E8DDD0] shrink-0 flex items-center justify-center text-[#806047]">
+                                    <ImageIcon className="w-5 h-5 opacity-50" />
+                                  </div>
+                                )}
+
+                                <div className="space-y-1.5 flex-1">
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <span className="font-bold text-[#806047] uppercase tracking-wider">
+                                      {proj.category === 'business-analysis' ? 'Business Analysis' : 'Data Analytics'}
+                                    </span>
+                                    <span className="text-[#DCC9B3]">·</span>
+                                    <span className="text-[#806047]">{proj.period || proj.date}</span>
+                                    <span className="text-[#DCC9B3]">·</span>
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                        proj.published
+                                          ? 'bg-emerald-100 text-emerald-800'
+                                          : 'bg-amber-100 text-amber-800'
+                                      }`}
+                                    >
+                                      {proj.published ? 'Published' : 'Draft'}
+                                    </span>
+                                    {proj.images && proj.images.length > 0 && (
+                                      <span className="text-[10px] text-[#806047] font-semibold">
+                                        ({proj.images.length} screenshots)
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h3 className="font-editorial text-xl font-bold text-[#3E2C22]">
+                                    {proj.title}
+                                  </h3>
+                                  <p className="text-xs text-[#694B36] line-clamp-1">{proj.tagline}</p>
                                 </div>
-                                <h3 className="font-editorial text-xl font-bold text-[#3E2C22]">
-                                  {proj.title}
-                                </h3>
-                                <p className="text-xs text-[#694B36] line-clamp-1">{proj.tagline}</p>
                               </div>
 
                               <div className="flex items-center gap-2 shrink-0">
@@ -1224,41 +1592,97 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
                             />
                           </div>
 
-                          {/* Image uploads */}
-                          <div className="sm:col-span-2 p-5 rounded-2xl bg-[#F8F5EF] border border-[#DCC9B3] space-y-3">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36]">
-                              Upload Screenshots, Diagrams, or Wireframes
-                            </label>
+                          {/* Project Cover & Gallery Image Management */}
+                          <div className="sm:col-span-2 p-5 rounded-2xl bg-[#F8F5EF] border border-[#DCC9B3] space-y-4">
+                            <div>
+                              <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36]">
+                                Project Screenshots, Diagrams & Cover Image
+                              </label>
+                              <p className="text-xs text-[#806047] mt-0.5">
+                                Select image files directly from your computer (JPG, PNG, WebP). Pick any image as the primary card cover, or reorder them.
+                              </p>
+                            </div>
+
                             <input
                               type="file"
                               multiple
                               accept="image/*"
                               onChange={handleProjectImageUpload}
                               disabled={uploadingImage}
-                              className="text-xs text-[#694B36] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#3E2C22] file:text-white hover:file:bg-[#694B36]"
+                              className="text-xs text-[#694B36] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#3E2C22] file:text-white hover:file:bg-[#694B36] cursor-pointer"
                             />
                             {uploadingImage && (
-                              <p className="text-xs text-[#694B36]">Uploading images...</p>
+                              <p className="text-xs text-[#694B36] animate-pulse">Uploading and storing images persistently...</p>
                             )}
+
                             {projectForm.images && projectForm.images.length > 0 && (
-                              <div className="flex flex-wrap gap-3 pt-2">
-                                {projectForm.images.map((img, iIdx) => (
-                                  <div key={iIdx} className="relative w-24 h-16 rounded-lg overflow-hidden border border-[#DCC9B3]">
-                                    <img src={img} alt="preview" className="w-full h-full object-cover" />
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setProjectForm({
-                                          ...projectForm,
-                                          images: projectForm.images?.filter((_, idx) => idx !== iIdx),
-                                        })
-                                      }
-                                      className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-red-600"
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                                {projectForm.images.map((img, iIdx) => {
+                                  const isCover = (projectForm.coverImage === img) || (!projectForm.coverImage && iIdx === 0);
+                                  return (
+                                    <div
+                                      key={iIdx}
+                                      className={`rounded-xl overflow-hidden border p-2 bg-[#FFFCF7] flex flex-col justify-between space-y-2 transition-all ${
+                                        isCover ? 'border-[#3E2C22] ring-2 ring-[#3E2C22]/20' : 'border-[#DCC9B3]'
+                                      }`}
                                     >
-                                      <X className="w-3 h-3" />
-                                    </button>
-                                  </div>
-                                ))}
+                                      <div className="relative aspect-video rounded-lg overflow-hidden bg-[#E8DDD0]">
+                                        <img src={img} alt={`Screenshot ${iIdx + 1}`} className="w-full h-full object-cover" />
+                                        {isCover && (
+                                          <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md bg-[#3E2C22] text-[#F8F5EF] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                                            <Star className="w-3 h-3 fill-[#F8F5EF]" />
+                                            Cover Image
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="flex items-center justify-between pt-1 gap-1">
+                                        {!isCover ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSetCoverImage(img)}
+                                            className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border border-[#DCC9B3] text-[#694B36] hover:bg-[#F8F5EF]"
+                                          >
+                                            Set as Cover
+                                          </button>
+                                        ) : (
+                                          <span className="text-[10px] font-bold text-emerald-800">
+                                            ✓ Active Cover
+                                          </span>
+                                        )}
+
+                                        <div className="flex items-center gap-1 ml-auto">
+                                          <button
+                                            type="button"
+                                            disabled={iIdx === 0}
+                                            onClick={() => handleMoveProjectImage(iIdx, 'left')}
+                                            className="p-1 rounded border border-[#DCC9B3] hover:bg-[#F8F5EF] disabled:opacity-30 text-[#3E2C22]"
+                                            title="Move left"
+                                          >
+                                            <ArrowLeft className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            disabled={iIdx === (projectForm.images?.length || 1) - 1}
+                                            onClick={() => handleMoveProjectImage(iIdx, 'right')}
+                                            className="p-1 rounded border border-[#DCC9B3] hover:bg-[#F8F5EF] disabled:opacity-30 text-[#3E2C22]"
+                                            title="Move right"
+                                          >
+                                            <ArrowRight className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRemoveProjectImage(iIdx)}
+                                            className="p-1 rounded border border-[#F2C4BE] text-[#8C2E24] hover:bg-red-50"
+                                            title="Remove image"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -1357,39 +1781,300 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
 
                 {/* 7. MANAGE CERTIFICATIONS */}
                 {activeTab === 'certifications' && (
-                  <div className="space-y-6">
-                    <div className="pb-4 border-b border-[#DCC9B3]">
-                      <h2 className="font-editorial text-3xl font-bold text-[#3E2C22]">
-                        Accredited Certifications
-                      </h2>
-                      <p className="text-xs text-[#806047]">
-                        BNSP Associate Data Scientist, BitLabs Academy, and TOEFL EPrT credentials.
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      {portfolio?.certifications?.map((cert) => (
-                        <div key={cert.id} className="p-5 rounded-2xl border border-[#DCC9B3] bg-[#F8F5EF] flex items-center justify-between">
+                  <div>
+                    {!isEditingCert ? (
+                      <div className="space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DCC9B3]">
                           <div>
-                            <span className="text-[11px] font-bold text-[#806047] uppercase tracking-wider">
-                              {cert.issuer} · {cert.period || cert.issueDate}
-                            </span>
-                            <h3 className="font-editorial text-xl font-bold text-[#3E2C22]">{cert.title}</h3>
-                            <p className="text-xs text-[#694B36]">Verified: {cert.skills.join(', ')}</p>
+                            <h2 className="font-editorial text-3xl font-bold text-[#3E2C22]">
+                              Accredited Certifications
+                            </h2>
+                            <p className="text-xs text-[#806047]">
+                              Upload certificate images, manage credentials, and configure verification links for your public portfolio.
+                            </p>
                           </div>
-                          {cert.credentialUrl && (
-                            <a
-                              href={cert.credentialUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs font-bold uppercase tracking-wider text-[#694B36] hover:underline"
-                            >
-                              Verify
-                            </a>
-                          )}
+                          <button
+                            onClick={handleOpenNewCert}
+                            className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-[#3E2C22] text-[#F8F5EF] hover:bg-[#694B36] transition-colors self-start sm:self-auto"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Add New Certification</span>
+                          </button>
                         </div>
-                      ))}
-                    </div>
+
+                        <div className="space-y-4">
+                          {portfolio?.certifications?.map((cert) => {
+                            const certImg = cert.imageUrl || cert.image;
+                            return (
+                              <div
+                                key={cert.id}
+                                className="p-5 rounded-2xl border border-[#DCC9B3] bg-[#F8F5EF] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                              >
+                                <div className="flex items-start gap-4 flex-1">
+                                  {certImg ? (
+                                    <div className="w-20 h-16 rounded-xl overflow-hidden border border-[#DCC9B3] bg-[#E8DDD0] shrink-0">
+                                      <img
+                                        src={certImg}
+                                        alt={cert.title}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="w-20 h-16 rounded-xl border border-[#DCC9B3] bg-[#E8DDD0] shrink-0 flex items-center justify-center text-[#806047]">
+                                      <Award className="w-6 h-6 opacity-60" />
+                                    </div>
+                                  )}
+
+                                  <div className="space-y-1 flex-1">
+                                    <div className="flex items-center gap-2 text-xs">
+                                      <span className="font-bold text-[#806047] uppercase tracking-wider">
+                                        {cert.issuer}
+                                      </span>
+                                      <span className="text-[#DCC9B3]">·</span>
+                                      <span className="text-[#806047]">{cert.period || cert.issueDate}</span>
+                                      {certImg && (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8DDD0] text-[#694B36]">
+                                          Has Image
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <h3 className="font-editorial text-xl font-bold text-[#3E2C22]">
+                                      {cert.title}
+                                    </h3>
+
+                                    {cert.skills && cert.skills.length > 0 && (
+                                      <p className="text-xs text-[#694B36]">
+                                        <strong>Skills:</strong> {cert.skills.join(', ')}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {cert.credentialUrl && (
+                                    <a
+                                      href={cert.credentialUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-2.5 rounded-xl border border-[#DCC9B3] hover:bg-[#FFFCF7] text-[#3E2C22] transition-colors"
+                                      title="Open verification link"
+                                    >
+                                      <ExternalLink className="w-4 h-4" />
+                                    </a>
+                                  )}
+                                  <button
+                                    onClick={() => handleEditCert(cert)}
+                                    className="p-2.5 rounded-xl border border-[#DCC9B3] hover:bg-[#FFFCF7] text-[#3E2C22] transition-colors"
+                                    title="Edit certification"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCert(cert.id, cert.title)}
+                                    className="p-2.5 rounded-xl border border-[#F2C4BE] text-[#8C2E24] hover:bg-red-50 transition-colors"
+                                    title="Delete certification"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Certification Create / Edit Form */
+                      <form onSubmit={handleSaveCert} className="space-y-6">
+                        <div className="flex items-center justify-between pb-4 border-b border-[#DCC9B3]">
+                          <div>
+                            <h2 className="font-editorial text-2xl font-bold text-[#3E2C22]">
+                              {certForm.id ? 'Edit Certification' : 'Add New Certification'}
+                            </h2>
+                            <p className="text-xs text-[#806047] mt-0.5">
+                              Upload the certificate image and provide credential details.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingCert(false)}
+                            className="p-2 rounded-lg text-[#806047] hover:bg-[#F1E8DC]"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Certificate Image Upload & Preview Box */}
+                        <div className="p-5 rounded-2xl bg-[#F8F5EF] border border-[#DCC9B3] space-y-4">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36]">
+                            Upload Certificate Image (JPG, JPEG, PNG, WebP)
+                          </label>
+
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                            {certForm.imageUrl ? (
+                              <div className="relative w-44 h-32 rounded-xl overflow-hidden border-2 border-[#DCC9B3] bg-[#E8DDD0] shrink-0">
+                                <img
+                                  src={certForm.imageUrl}
+                                  alt="Certificate preview"
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveCertImage}
+                                  className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/70 text-white hover:bg-red-600 transition-colors"
+                                  title="Remove certificate image"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="w-44 h-32 rounded-xl border-2 border-dashed border-[#DCC9B3] bg-[#FFFCF7] flex flex-col items-center justify-center text-[#806047] shrink-0">
+                                <Award className="w-8 h-8 opacity-40 mb-1" />
+                                <span className="text-[11px] font-semibold">No Image Uploaded</span>
+                              </div>
+                            )}
+
+                            <div className="space-y-2 flex-1">
+                              <p className="text-xs text-[#806047] leading-relaxed">
+                                Upload a clear photograph or high-resolution scan of your official certificate. This image will be displayed on the public website with zoom and fullscreen Lightbox preview.
+                              </p>
+                              <input
+                                type="file"
+                                accept=".jpg,.jpeg,.png,.webp,image/*"
+                                onChange={handleCertImageUpload}
+                                disabled={uploadingCertImage}
+                                className="text-xs text-[#694B36] file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#3E2C22] file:text-white hover:file:bg-[#694B36] cursor-pointer"
+                              />
+                              {uploadingCertImage && (
+                                <p className="text-xs text-[#694B36] animate-pulse">Uploading and validating certificate image...</p>
+                              )}
+                              {certForm.imageUrl && (
+                                <div className="pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={handleRemoveCertImage}
+                                    className="text-xs font-semibold text-[#8C2E24] hover:underline"
+                                  >
+                                    Remove certificate image
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36] mb-1.5">
+                              Certification Title *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. Associate Data Scientist"
+                              value={certForm.title || ''}
+                              onChange={(e) => setCertForm({ ...certForm, title: e.target.value })}
+                              className="w-full px-4 py-3 rounded-xl border border-[#DCC9B3] bg-[#F8F5EF] text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36] mb-1.5">
+                              Issuing Organization *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. BNSP (Badan Nasional Sertifikasi Profesi)"
+                              value={certForm.issuer || ''}
+                              onChange={(e) => setCertForm({ ...certForm, issuer: e.target.value })}
+                              className="w-full px-4 py-3 rounded-xl border border-[#DCC9B3] bg-[#F8F5EF] text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36] mb-1.5">
+                              Issue Date / Year
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. 2024"
+                              value={certForm.issueDate || ''}
+                              onChange={(e) => setCertForm({ ...certForm, issueDate: e.target.value })}
+                              className="w-full px-4 py-3 rounded-xl border border-[#DCC9B3] bg-[#F8F5EF] text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36] mb-1.5">
+                              Validity Period / Label
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. 2024 - 2027 or Score 480"
+                              value={certForm.period || ''}
+                              onChange={(e) => setCertForm({ ...certForm, period: e.target.value })}
+                              className="w-full px-4 py-3 rounded-xl border border-[#DCC9B3] bg-[#F8F5EF] text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36] mb-1.5">
+                              Verification / Credential URL
+                            </label>
+                            <input
+                              type="url"
+                              placeholder="https://..."
+                              value={certForm.credentialUrl || ''}
+                              onChange={(e) => setCertForm({ ...certForm, credentialUrl: e.target.value })}
+                              className="w-full px-4 py-3 rounded-xl border border-[#DCC9B3] bg-[#F8F5EF] text-sm"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36] mb-1.5">
+                              Verified Skills (Comma separated)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Data Analytics, Python, Machine Learning, Statistical Evaluation"
+                              value={rawCertSkills}
+                              onChange={(e) => setRawCertSkills(e.target.value)}
+                              className="w-full px-4 py-3 rounded-xl border border-[#DCC9B3] bg-[#F8F5EF] text-sm"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#694B36] mb-1.5">
+                              Description / Additional Notes
+                            </label>
+                            <textarea
+                              rows={2}
+                              placeholder="Brief description or certificate score details..."
+                              value={certForm.description || ''}
+                              onChange={(e) => setCertForm({ ...certForm, description: e.target.value })}
+                              className="w-full px-4 py-3 rounded-xl border border-[#DCC9B3] bg-[#F8F5EF] text-sm"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 pt-4 border-t border-[#DCC9B3]">
+                          <button
+                            type="submit"
+                            className="px-7 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#3E2C22] text-[#F8F5EF] hover:bg-[#694B36] transition-colors"
+                          >
+                            Save Certification
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingCert(false)}
+                            className="px-6 py-3.5 rounded-full text-xs font-bold text-[#806047] hover:bg-[#F1E8DC] transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 )}
 
@@ -1647,6 +2332,69 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onRetu
                         <span>
                           Your TOTP secret key is encrypted at rest using AES-256-GCM. Session tokens are issued only after valid TOTP confirmation.
                         </span>
+                      </div>
+                    </div>
+
+                    {/* Trusted Devices & 30-Day Remember Status */}
+                    <div className="p-6 rounded-2xl border border-[#DCC9B3] bg-[#F8F5EF] space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#DCC9B3]">
+                        <div className="flex items-center gap-2.5">
+                          <Laptop className="w-5 h-5 text-[#694B36]" />
+                          <div>
+                            <h3 className="font-editorial text-xl font-bold text-[#3E2C22]">
+                              Trusted Devices (30-Day Remember)
+                            </h3>
+                            <p className="text-xs text-[#806047]">
+                              Browsers checked with "Remember this device" bypass the 6-digit TOTP challenge on future logins for 30 days.
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleRevokeTrustedDevices}
+                          className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border border-[#F2C4BE] text-[#8C2E24] hover:bg-red-50 transition-colors shrink-0"
+                        >
+                          Revoke All Trusted Devices
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-[#FFFCF7] border border-[#DCC9B3] space-y-1">
+                          <div className="text-[10px] uppercase tracking-wider font-bold text-[#806047]">
+                            Current Browser Status
+                          </div>
+                          <div className="text-sm font-bold flex items-center gap-2">
+                            {trustedDevicesData?.isCurrentDeviceTrusted ? (
+                              <span className="text-emerald-800 flex items-center gap-1.5">
+                                <ShieldCheck className="w-4 h-4" />
+                                Recognized Trusted Device (Active)
+                              </span>
+                            ) : (
+                              <span className="text-[#806047] flex items-center gap-1.5">
+                                <Clock className="w-4 h-4" />
+                                Standard Session (MFA Required Next Login)
+                              </span>
+                            )}
+                          </div>
+                          {trustedDevicesData?.currentExpiresAt && (
+                            <p className="text-[11px] text-[#806047]">
+                              Trust expires on: {new Date(trustedDevicesData.currentExpiresAt).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-[#FFFCF7] border border-[#DCC9B3] space-y-1">
+                          <div className="text-[10px] uppercase tracking-wider font-bold text-[#806047]">
+                            Total Active Trusted Devices
+                          </div>
+                          <div className="font-editorial text-2xl font-bold text-[#3E2C22]">
+                            {trustedDevicesData?.totalTrustedDevices || 0}
+                          </div>
+                          <p className="text-[11px] text-[#806047]">
+                            Clicking Revoke All immediately forces Microsoft Authenticator TOTP verification on all browsers.
+                          </p>
+                        </div>
                       </div>
                     </div>
 

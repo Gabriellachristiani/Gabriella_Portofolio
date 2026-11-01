@@ -6,6 +6,7 @@ import { AboutSection } from './components/AboutSection';
 import { ExperienceSection } from './components/ExperienceSection';
 import { ProjectsSection } from './components/ProjectsSection';
 import { SkillsSection } from './components/SkillsSection';
+import { CertificationsSection } from './components/CertificationsSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { AdminLogin } from './components/admin/AdminLogin';
@@ -176,11 +177,14 @@ export default function App() {
         {/* Business Analysis & Data Analytics Projects */}
         <ProjectsSection projects={portfolio?.projects || []} />
 
-        {/* Skills & Accredited Certifications */}
+        {/* Core Competencies & Skills */}
         <SkillsSection
           certifications={portfolio?.certifications || []}
           profile={portfolio?.profile || null}
         />
+
+        {/* Accredited Certifications with Image Lightbox */}
+        <CertificationsSection certifications={portfolio?.certifications || []} />
 
         {/* Contact Form & Information */}
         <ContactSection profile={portfolio?.profile || null} />

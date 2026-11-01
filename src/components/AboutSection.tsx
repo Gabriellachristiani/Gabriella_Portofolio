@@ -39,10 +39,10 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ profile }) => {
           <div className="lg:col-span-5 space-y-6">
             <div className="relative rounded-3xl overflow-hidden border-2 border-[#DCC9B3] bg-[#FFFCF7] p-3 shadow-md">
               <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-[#E8DDD0] relative flex items-center justify-center">
-                {profile.avatarUrl ? (
+                {profile.aboutPhotoUrl ? (
                   <img
-                    src={profile.avatarUrl}
-                    alt="Gabriella Christiani"
+                    src={profile.aboutPhotoUrl}
+                    alt="Gabriella Christiani - About Me"
                     className="w-full h-full object-cover"
                   />
                 ) : (

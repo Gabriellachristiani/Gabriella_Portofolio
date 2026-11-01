@@ -79,20 +79,55 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ projects }) =>
 
         {/* Project Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {filteredProjects.map((project) => (
-            <article
-              key={project.id}
-              className="group flex flex-col bg-[#FFFCF7] border border-[#DCC9B3] rounded-[28px] overflow-hidden hover:border-[#A58A73] hover:shadow-lg transition-all duration-300"
-            >
-              {/* Card Banner / Thumbnail Header */}
-              <div className="p-7 pb-0">
-                <div className="flex items-center justify-between text-xs mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold uppercase tracking-wider text-[11px] text-[#806047]">
-                      {project.category === 'business-analysis'
-                        ? 'Business Analysis & IS'
-                        : 'Data Analytics & NLP'}
+          {filteredProjects.map((project) => {
+            const displayImage = project.coverImage || (project.images && project.images.length > 0 ? project.images[0] : null);
+            return (
+              <article
+                key={project.id}
+                className="group flex flex-col bg-[#FFFCF7] border border-[#DCC9B3] rounded-[28px] overflow-hidden hover:border-[#A58A73] hover:shadow-lg transition-all duration-300"
+              >
+                {/* Project Cover Image */}
+                {displayImage ? (
+                  <div
+                    onClick={() => setSelectedProject(project)}
+                    className="relative w-full aspect-[16/9] overflow-hidden bg-[#F1E8DC] border-b border-[#DCC9B3] cursor-pointer"
+                  >
+                    <img
+                      src={displayImage}
+                      alt={project.title}
+                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#3E2C22]/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {project.images && project.images.length > 1 && (
+                      <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-[#FFFCF7]/90 text-[11px] font-semibold text-[#3E2C22] shadow backdrop-blur-sm">
+                        {project.images.length} screenshots
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => setSelectedProject(project)}
+                    className="w-full h-32 bg-gradient-to-br from-[#F1E8DC] to-[#E8DDD0] border-b border-[#DCC9B3] flex items-center justify-between px-7 cursor-pointer group-hover:bg-[#E8DDD0] transition-colors"
+                  >
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#806047]">
+                      <Layers className="w-4 h-4 text-[#694B36]" />
+                      <span>{project.category === 'business-analysis' ? 'Business Analysis' : 'Data Analytics'}</span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#806047]">
+                      Click to explore
                     </span>
+                  </div>
+                )}
+
+                {/* Card Banner / Thumbnail Header */}
+                <div className="p-7 pb-0">
+                  <div className="flex items-center justify-between text-xs mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold uppercase tracking-wider text-[11px] text-[#806047]">
+                        {project.category === 'business-analysis'
+                          ? 'Business Analysis & IS'
+                          : 'Data Analytics & NLP'}
+                      </span>
                     {project.score && (
                       <span className="px-2 py-0.5 rounded-full bg-[#E8DDD0] text-[#3E2C22] font-bold text-[10px]">
                         ★ Score {project.score}
@@ -158,7 +193,8 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ projects }) =>
                 </button>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
 
         {/* Modal for Deep Dive Case Study */}
