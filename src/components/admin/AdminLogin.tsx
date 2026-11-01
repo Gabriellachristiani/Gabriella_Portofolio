@@ -92,6 +92,12 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBackTo
         throw new Error(data.error || 'Authentication failed');
       }
 
+      if (data.token) {
+        localStorage.setItem('admin_token', data.token);
+        onLoginSuccess(data.token, data.user);
+        return;
+      }
+
       setMfaToken(data.mfaToken);
 
       if (data.mfaEnrollmentRequired) {
